@@ -1,0 +1,12 @@
+
+*.ipch
+*.jpg
+*.txt
+*.png
+*.mp4
+*.obj
+*.log
+*.pch
+*.tlog
+*.db
+*.weights
