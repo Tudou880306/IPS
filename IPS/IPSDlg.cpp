@@ -26,7 +26,7 @@ CWnd *pwnd;
 int ImgNum = 0;
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 //CIPSDlg dlg;
-std::mutex mt,mt_temp, mt1,mt1_temp;
+std::mutex mt, mt_temp, mt1, mt1_temp;
 bool isplay1 = false;
 bool isplay2 = false;
 class CAboutDlg : public CDialogEx
@@ -34,12 +34,12 @@ class CAboutDlg : public CDialogEx
 public:
 	CAboutDlg();
 
-// 对话框数据
+	// 对话框数据
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
 // 实现
@@ -129,7 +129,7 @@ BOOL CIPSDlg::OnInitDialog()
 	m_edit_weights = _T("yolov3.weights");
 
 	m_listctrl_bbox.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-	m_listctrl_bbox.InsertColumn(0, _T("                 info           "),0,250);
+	m_listctrl_bbox.InsertColumn(0, _T("                 info           "), 0, 250);
 	// TODO: 在此添加额外的初始化代码
 	SetTimer(1, 25, NULL); //定时器，定时时间和帧率一致
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -196,326 +196,190 @@ void  CIPSDlg::DrawPicToHDC(IplImage *img, UINT ID)
 	cimg.DrawToHDC(hDC, &rect); // 将图片绘制到显示控件的指定区域内
 	ReleaseDC(pDC);
 }
-cv::VideoCapture cap,cap1;
+cv::VideoCapture cap, cap1;
 cv::Mat cur_frame, cur_frame1;
-void *handle,*handle1;
+void *handle, *handle1;
 std::vector<bbox_t>targetinfo, targetinfo1;
 std::queue<std::vector<bbox_t>> result_queue;
-cv::Mat  m_CvvImages,m_CvvImages1;
+cv::Mat  m_CvvImages, m_CvvImages1;
 std::atomic<bool> flag = true;
 std::atomic<bool> flag1 = true;
 void output()
 {
 	while (1)
 	{
-		
-			std::thread t_detect, t_cap;
-			cv::Mat cap_frame, m_CvvImages_temp;
-			while (!cur_frame.empty())
+		std::thread t_detect, t_cap;
+		cv::Mat cap_frame, m_CvvImages_temp;
+		while (!cur_frame.empty())
+		{
+			if (!t_cap.joinable())
 			{
-				
-				//if (t_cap.joinable())
-				//{
-				//	t_cap.join();
-				//	OutputDebugString(_T("===============sssss\r\n"));
-				//	//++fps_cap_counter;
-				//	//mt.lock();
-				//	cap_frame.copyTo(cur_frame);
-				//	//mt.unlock();
-				//}
-				if (!t_cap.joinable())
+				t_cap = std::thread([&]()
 				{
-					t_cap = std::thread([&]()
+					while (1)
 					{
-						while (1)
+						OutputDebugString(_T("===============t_cap\r\n"));
+						if (isplay1)
 						{
-							OutputDebugString(_T("===============t_cap\r\n"));
-							if (isplay1)
+							if (cap.isOpened())
 							{
 								cap >> cap_frame;
-
-								if (flag)
-								{
-									//mt1.lock();
-									//cur_frame1.copyTo(m_CvvImages1_temp); //复制该帧图像 
-									m_CvvImages_temp = cap_frame.clone();
-									flag = false;
-									//mt1.unlock();
-								}
-								Sleep(25);
-								
 							}
 							else
-								Sleep(1000);
-							
-						}
-
-						//cur_frame = cap_frame.clone();
-						//std::cout << "cap_frame" << std::endl;
-					});
-				}
-				//t_cap = std::thread([&]()
-				//{
-				//	OutputDebugString(_T("===============t_cap\r\n"));
-				//	cap >> cap_frame;
-				//	//cur_frame = cap_frame.clone();
-				//	//std::cout << "cap_frame" << std::endl;
-				//});
-
-				//if (flag)
-				//{
-				//	mt.lock();
-				//	cur_frame.copyTo(m_CvvImages_temp); //复制该帧图像 
-				//	flag = false;
-				//	mt.unlock();
-				//}
-				/*if (!isplay1)
-				{
-					t_detect.join();
-				}
-				else*/
-				{
-					if (!t_detect.joinable())
-					{
-						t_detect = std::thread([&]()
-						{
-							flag = true;
-
-							while (1)
+								cap_frame = cur_frame.clone();
+							if (flag)
 							{
-								while (!cur_frame.empty() && isplay1)
-								{
-									//flag = true;
-									OutputDebugString(_T("===============t_detect\r\n"));
-
-									if (!flag)
-									{
-										SDLib_StartProcess_Mat(handle, m_CvvImages_temp, targetinfo);
-
-										result_queue.push(targetinfo);
-										mt_temp.lock();
-										//m_CvvImages1_temp.copyTo(m_CvvImages1);
-										m_CvvImages = m_CvvImages_temp.clone();
-
-										mt_temp.unlock();
-										flag = true;
-
-									}
-									//auto current_image = det_image;
-									//cv:Mat  m_CvvImage, m_CvvImage1;
-									//SDLib_Release(handle);
-
-									//mt.lock();
-									//SDLib_StartProcess_Mat(handle, m_CvvImages_temp, targetinfo);
-
-									////	m_CvvImages = cur_frame.clone(); //复制该帧图像 
-									//mt.unlock();
-									//mt_temp.lock();
-									//m_CvvImages_temp.copyTo(m_CvvImages);
-
-									//mt_temp.unlock();
-									cv::waitKey(3);
-									Sleep(5);
-								}
-								Sleep(500);
+								//mt1.lock();
+								//cur_frame1.copyTo(m_CvvImages1_temp); //复制该帧图像 
+								m_CvvImages_temp = cap_frame.clone();
+								flag = false;
+								//mt1.unlock();
 							}
-							
-
-						});
-
+							Sleep(25);
+						}
+						else
+							Sleep(1000);
 					}
-				}
-				//std::shared_ptr<image_t>  det_image = mat_to_image_resize(cur_frame);
-				
-				//cap >> cur_frame;
+				});
+			}
+			if (!t_detect.joinable())
+			{
+				t_detect = std::thread([&]()
+				{
+					flag = true;
 
-				
-			/*
-			cap >> cur_frame;
+					while (1)
+					{
+						while (!cur_frame.empty() && isplay1)
+						{
+							//flag = true;
+							OutputDebugString(_T("===============t_detect\r\n"));
 
-			//cv:Mat  m_CvvImage;
-			//SDLib_Release(handle);
-			mt.lock();
-			dlg.m_CvvImage = cur_frame.clone(); //复制该帧图像 
-			SDLib_StartProcess_Mat(handle, dlg.m_CvvImage, targetinfo);
-			mt.unlock();
-			//dlg.DrawPicToHDC((IplImage*)&IplImage(dlg.m_CvvImage), IDC_STATIC_1);
-			Sleep(20);
-			*/
-				Sleep(10);
+							if (!flag)
+							{
+								SDLib_StartProcess_Mat(handle, m_CvvImages_temp, targetinfo);
+
+								result_queue.push(targetinfo);
+								mt_temp.lock();
+								//m_CvvImages1_temp.copyTo(m_CvvImages1);
+								m_CvvImages = m_CvvImages_temp.clone();
+
+								mt_temp.unlock();
+								flag = true;
+
+							}
+							cv::waitKey(3);
+							Sleep(5);
+						}
+						Sleep(500);
+					}
+				});
+			}
+			Sleep(10);
 		}
-		
 	}
-	
 }
 void output1()
 {
 	while (1)
 	{
-		
-
-			std::thread t_detect, t_cap;
-			cv::Mat cap_frame, m_CvvImages1_temp;
-			while (!cur_frame1.empty())
+		std::thread t_detect, t_cap;
+		cv::Mat cap_frame, m_CvvImages1_temp;
+		while (!cur_frame1.empty())
+		{
+			
+			if (!t_cap.joinable())
 			{
-				
-				//if (t_cap.joinable())
-				//{
-				//	t_cap.join();
-				//	OutputDebugString(_T("===============sssss\r\n"));
-				//	//++fps_cap_counter;
-				//	//mt.lock();
-				//	//cap_frame.copyTo(cur_frame1);
-				//	cur_frame1 = cap_frame.clone();
-				//	//mt.unlock();
-				//}
-				if (!t_cap.joinable())
+				t_cap = std::thread([&]()
 				{
-					t_cap = std::thread([&]()
+					cap_frame = cur_frame1.clone();
+					while (1)
 					{
-						while (1)
+						if (!cap_frame.empty())
 						{
 							OutputDebugString(_T("===============t_cap\r\n"));
 							if (isplay2)
 							{
-								cap1 >> cap_frame;
-								if (flag1)
+								if (cap1.isOpened())
 								{
-									//mt1.lock();
-									//cur_frame1.copyTo(m_CvvImages1_temp); //复制该帧图像 
+									cap1 >> cap_frame;
+									if (flag1)
+									{
+										//mt1.lock();
+										//cur_frame1.copyTo(m_CvvImages1_temp); //复制该帧图像 
+										m_CvvImages1_temp = cap_frame.clone();
+										flag1 = false;
+										//mt1.unlock();
+									}
+								}
+								else
+								{
 									m_CvvImages1_temp = cap_frame.clone();
 									flag1 = false;
-									//mt1.unlock();
 								}
-									Sleep(25);
-								
+
+								Sleep(25);
 							}
 							else
 								Sleep(1000);
 						}
 						
-						//cur_frame = cap_frame.clone();
-						//std::cout << "cap_frame" << std::endl;
-					});
-				}
-				
-
-				//if (flag1)
-				//{
-				//	mt1.lock();
-				//	 //cur_frame1.copyTo(m_CvvImages1_temp); //复制该帧图像 
-				//	m_CvvImages1_temp = cur_frame1.clone();
-				//	flag1 = false;
-				//	mt1.unlock();
-				//}
-				//std::shared_ptr<image_t>  det_image = mat_to_image_resize(cur_frame);
-				/*if (!isplay2)
-				{
-					t_detect.join();
-				}
-				else*/
-				{
-					if (!t_detect.joinable())
-					{
-						t_detect = std::thread([&]()
-						{
-							flag1 = true;
-							while (1)
-							{
-								while (!m_CvvImages1_temp.empty() && isplay2)
-								{
-									OutputDebugString(_T("===============t_detect\r\n"));
-									//auto current_image = det_image;
-									//cv:Mat  m_CvvImage, m_CvvImage1;
-									//SDLib_Release(handle);
-
-									//mt1.lock();
-									if (!flag1)
-									{
-										SDLib_StartProcess_Mat(handle1, m_CvvImages1_temp, targetinfo1);
-										result_queue.push(targetinfo1);
-										mt1_temp.lock();
-										//m_CvvImages1_temp.copyTo(m_CvvImages1);
-										m_CvvImages1 = m_CvvImages1_temp.clone();
-
-										mt1_temp.unlock();
-										flag1 = true;
-
-									}
-
-									//	m_CvvImages1_temp.copyTo(m_CvvImages1);
-									//	m_CvvImages = cur_frame.clone(); //复制该帧图像 
-									//mt1.unlock();
-
-									
-									cv::waitKey(3);
-									Sleep(5);
-								}
-								Sleep(500);
-							}
-							
-
-						});
-
 					}
-					//Sleep(25);
-				}
-				
-				//cap >> cur_frame;
-
-				Sleep(10);
+				});
+			}
+			if (!t_detect.joinable())
+			{
+				t_detect = std::thread([&]()
+				{
+					flag1 = true;
+					while (1)
+					{
+						while (!m_CvvImages1_temp.empty() && isplay2)
+						{
+							OutputDebugString(_T("===============t_detect\r\n"));
+							if (!flag1)
+							{
+								SDLib_StartProcess_Mat(handle1, m_CvvImages1_temp, targetinfo1);
+								result_queue.push(targetinfo1);
+								mt1_temp.lock();
+								//m_CvvImages1_temp.copyTo(m_CvvImages1);
+								m_CvvImages1 = m_CvvImages1_temp.clone();
+								mt1_temp.unlock();
+								flag1 = true;
+								
+							}
+							cv::waitKey(3);
+							Sleep(5);
+						}
+						Sleep(500);
+					}
+				});
+			}
+			Sleep(10);
 		}
-		
 	}
-	
 }
 
 void CIPSDlg::OnBnClickedBtnPlay()
 {
 	// TODO: 在此添加控件通知处理程序代码
+	if (m_edit_weights.IsEmpty())
+	{
+		return;
+	}
 
-		
-		// TODO: Add your command handler code here
-		if (m_edit_weights.IsEmpty())
-		{
-			return;
-		}
-
-		USES_CONVERSION;
-		handle = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
-		handle1 = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
-		//cv::VideoCapture cap("test.mp4"); 
-		cap.open("test.mp4");
-		cap1.open("test1.mp4");
-		cap >> cur_frame;
-		cap1 >> cur_frame1;
-		int fps = cap.get(CV_CAP_PROP_FPS);
-		CString temp;
-		temp.Format(_T("%d"), fps);
-		OutputDebugString(LPCWSTR(temp));
-		//frame = cvQueryFrame(Capture); //从摄像头或者文件中抓取并返回一帧
-		//pDC = GetDlgItem(IDC_PIC_STATIC_1)->GetDC();//GetDlgItem(IDC_PIC_STATIC)意思为获取显示控件的句柄（句柄就是指针），获取显示控件的DC
-		//GetDlgItem(IDC_PIC_STATIC_1)->GetClientRect(&rect);
-		//hDC = pDC->GetSafeHdc();//获取显示控件的句柄
-
-		
-		//m_CvvImage= cur_frame.clone(); //复制该帧图像   
-		//m_CvvImage.DrawToHDC(hDC, &rect); //显示到设备的矩形框内
-		//DrawPicToHDC((IplImage*)&IplImage(m_CvvImage), IDC_STATIC_1);
-		//ReleaseDC(pDC);
-		
-		std::thread t(output);
-		t.detach();
-		
-		std::thread t1(output1);
-		t1.detach();
-
-		
-		
-
-		
-
-		
+	USES_CONVERSION;
+	handle = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
+	handle1 = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
+	//cv::VideoCapture cap("test.mp4"); 
+	//cap.open("test.mp4");
+	//cap1.open("test1.mp4");
+	//cap >> cur_frame;
+	//cap1 >> cur_frame1;
+	//int fps = cap.get(CV_CAP_PROP_FPS);
+	//CString temp;
+	//temp.Format(_T("%d"), fps);
+	//OutputDebugString(LPCWSTR(temp));
 
 
 
@@ -524,39 +388,26 @@ void CIPSDlg::OnBnClickedBtnPlay()
 void CIPSDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	/*mt.lock();
-	cv::Mat temp = dlg.m_CvvImage.clone();
-	mt.unlock();
-	mt1.lock();
-	cv::Mat temp1 = dlg.m_CvvImage1.clone();
-	mt1.unlock();
-	if (!temp.empty())
-	{
-		DrawPicToHDC((IplImage*)&IplImage(temp), IDC_STATIC_1);
-	}
-	if (!temp1.empty())
-	{
-		DrawPicToHDC((IplImage*)&IplImage(temp1), IDC_STATIC_2);
-	}*/
+
 	OutputDebugString(_T("==============OnTimer\n"));
-	if (isplay1)
+	//if (isplay1)
 	{
 		mt_temp.lock();
 		DrawPicToHDC((IplImage*)&IplImage(m_CvvImages), IDC_STATIC_1);
 		mt_temp.unlock();
 	}
-	if (isplay2)
+	//if (isplay2)
 	{
 		mt1_temp.lock();
 		DrawPicToHDC((IplImage*)&IplImage(m_CvvImages1), IDC_STATIC_2);
 		mt1_temp.unlock();
 	}
-	
-	if (result_queue.size()>0)
+
+	if (result_queue.size() > 0)
 	{
 		std::vector<bbox_t>temp = result_queue.front();
 
-		for (int i = 0;i<temp.size();i++)
+		for (int i = 0; i < temp.size(); i++)
 		{
 			CString str;
 			str.Format(_T("obj_id%d track_id %d x:%d y:%d w:%d h:%d"), temp[i].obj_id, temp[i].track_id, temp[i].x, temp[i].y, temp[i].w, temp[i].h);
@@ -566,26 +417,7 @@ void CIPSDlg::OnTimer(UINT_PTR nIDEvent)
 
 	}
 
-	/*
-	cap >> cur_frame;
-		cap1 >> cur_frame1;
-
-		cv:Mat  m_CvvImage,m_CvvImage1;
-		//SDLib_Release(handle);
-		m_CvvImage = cur_frame.clone(); //复制该帧图像 
-		m_CvvImage1 = cur_frame1.clone();
-		int count = cap.get(CV_CAP_PROP_POS_FRAMES);
-		//if (count %25==0)
-		{
-			SDLib_StartProcess_Mat(handle, m_CvvImage, targetinfo);
-			//SDLib_StartProcess_Mat(handle, m_CvvImage1, targetinfo1);
-			//DrawPicToHDC((IplImage*)&IplImage(m_CvvImage), IDC_STATIC_1);
-			//DrawPicToHDC((IplImage*)&IplImage(m_CvvImage1), IDC_STATIC_2);
-		}
-		*/
-		
-		CDialogEx::OnTimer(nIDEvent);
-	
+	CDialogEx::OnTimer(nIDEvent);
 }
 
 
@@ -594,10 +426,6 @@ void CIPSDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	isplay1 = !isplay1;
-
-	
-	
-	
 }
 
 
@@ -605,7 +433,6 @@ void CIPSDlg::OnBnClickedButton2()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	isplay2 = !isplay2;
-	
 }
 
 
@@ -664,8 +491,30 @@ void CIPSDlg::OnBnClickedButton6()
 		CString file = fileDlg.GetPathName();//文件名+后缀  
 		UpdateData(FALSE);
 		USES_CONVERSION;
-		cap.open(T2A(file.GetBuffer(0)));
-		isplay1 = true;
+		std::string filename = T2A(file.GetBuffer(0));
+		std::string const protocol = filename.substr(0, 7);
+		std::string const file_ext = filename.substr(filename.find_last_of(".") + 1);
+		if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" || 	// video file
+			protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/")	// video network stream
+		{
+			std::thread t(output);
+			t.detach();
+
+			cap.open(T2A(file.GetBuffer(0)));
+			cap >> cur_frame;
+			isplay1 = true;
+		}
+		else
+		{
+			cur_frame = cv::imread(filename);
+			SDLib_StartProcess_Mat(handle, cur_frame, targetinfo);
+			result_queue.push(targetinfo);
+			mt_temp.lock();
+			//m_CvvImages1_temp.copyTo(m_CvvImages1);
+			m_CvvImages = cur_frame.clone();
+			mt_temp.unlock();
+		}
+		
 
 	}
 }
@@ -685,8 +534,32 @@ void CIPSDlg::OnBnClickedButton5()
 		CString file = fileDlg.GetPathName();//文件名+后缀  
 		UpdateData(FALSE);
 		USES_CONVERSION;
-		cap1.open(T2A(file.GetBuffer(0)));
-		isplay2 = true;
+
+		std::string filename = T2A(file.GetBuffer(0));
+		std::string const protocol = filename.substr(0, 7);
+		std::string const file_ext = filename.substr(filename.find_last_of(".") + 1);
+		if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" || 	// video file
+			protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/")	// video network stream
+		{
+			
+
+			std::thread t1(output1);
+			t1.detach();
+			cap1.open(T2A(file.GetBuffer(0)));
+			cap1 >> cur_frame1;
+			isplay2 = true;
+
+		}
+		else
+		{
+			cur_frame1 = cv::imread(filename);
+			SDLib_StartProcess_Mat(handle1, cur_frame1, targetinfo1);
+			result_queue.push(targetinfo1);
+			mt1_temp.lock();
+			//m_CvvImages1_temp.copyTo(m_CvvImages1);
+			m_CvvImages1 = cur_frame1.clone();
+			mt1_temp.unlock();
+		}
 
 	}
 }
