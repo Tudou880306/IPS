@@ -85,6 +85,10 @@ BEGIN_MESSAGE_MAP(CIPSDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON1, &CIPSDlg::OnBnClickedButton1)
 	ON_BN_CLICKED(IDC_BUTTON2, &CIPSDlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BTN_PLAY2, &CIPSDlg::OnBnClickedBtnPlay2)
+	ON_BN_CLICKED(IDC_BTN_SCAN, &CIPSDlg::OnBnClickedBtnScan)
+	ON_BN_CLICKED(IDC_BTN_PLAY3, &CIPSDlg::OnBnClickedBtnPlay3)
+	ON_BN_CLICKED(IDC_BUTTON6, &CIPSDlg::OnBnClickedButton6)
+	ON_BN_CLICKED(IDC_BUTTON5, &CIPSDlg::OnBnClickedButton5)
 END_MESSAGE_MAP()
 
 
@@ -120,9 +124,12 @@ BOOL CIPSDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	ShowWindow(SW_MINIMIZE);
+	CWnd* pWnd = GetDlgItem(IDC_EDIT_Path);
+	pWnd->SetWindowText(_T("yolov3.weights"));
+	m_edit_weights = _T("yolov3.weights");
 
 	m_listctrl_bbox.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-	m_listctrl_bbox.InsertColumn(0, _T(""));
+	m_listctrl_bbox.InsertColumn(0, _T("                 info           "),0,250);
 	// TODO: 在此添加额外的初始化代码
 	SetTimer(1, 25, NULL); //定时器，定时时间和帧率一致
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -176,65 +183,7 @@ HCURSOR CIPSDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
-//static image_t make_empty_image(int w, int h, int c)
-//{
-//	image_t out;
-//	out.data = 0;
-//	out.h = h;
-//	out.w = w;
-//	out.c = c;
-//	return out;
-//}
-//static image_t make_image_custom(int w, int h, int c)
-//{
-//	image_t out = make_empty_image(w, h, c);
-//	out.data = (float *)calloc(h*w*c, sizeof(float));
-//	return out;
-//}
-//static image_t ipl_to_image(IplImage* src)
-//{
-//	unsigned char *data = (unsigned char *)src->imageData;
-//	int h = src->height;
-//	int w = src->width;
-//	int c = src->nChannels;
-//	int step = src->widthStep;
-//	image_t out = make_image_custom(w, h, c);
-//	int count = 0;
-//
-//	for (int k = 0; k < c; ++k) {
-//		for (int i = 0; i < h; ++i) {
-//			int i_step = i*step;
-//			for (int j = 0; j < w; ++j) {
-//				out.data[count++] = data[i_step + j*c + k] / 255.;
-//			}
-//		}
-//	}
-//
-//	return out;
-//}
-//void free_image(image_t m)
-//{
-//	if (m.data) {
-//		free(m.data);
-//	}
-//}
-//std::shared_ptr<image_t> mat_to_image_resize(cv::Mat mat) 
-//{
-//	if (mat.data == NULL) return std::shared_ptr<image_t>(NULL);
-//	cv::Mat det_mat;
-//	cv::resize(mat, det_mat, cv::Size(416, 416));
-//	return mat_to_image(det_mat);
-//}
-//
-//static std::shared_ptr<image_t> mat_to_image(cv::Mat img_src)
-//{
-//	cv::Mat img;
-//	cv::cvtColor(img_src, img, cv::COLOR_RGB2BGR);
-//	std::shared_ptr<image_t> image_ptr(new image_t, [](image_t *img) { free_image(*img); delete img; });
-//	std::shared_ptr<IplImage> ipl_small = std::make_shared<IplImage>(img);
-//	*image_ptr = ipl_to_image(ipl_small.get());
-//	return image_ptr;
-//}
+
 
 void  CIPSDlg::DrawPicToHDC(IplImage *img, UINT ID)
 {
@@ -525,11 +474,16 @@ void CIPSDlg::OnBnClickedBtnPlay()
 {
 	// TODO: 在此添加控件通知处理程序代码
 
-		isplay1 = true;
-		isplay2 = true;
+		
 		// TODO: Add your command handler code here
-		handle = SDLib_Init();
-		handle1 = SDLib_Init();
+		if (m_edit_weights.IsEmpty())
+		{
+			return;
+		}
+
+		USES_CONVERSION;
+		handle = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
+		handle1 = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
 		//cv::VideoCapture cap("test.mp4"); 
 		cap.open("test.mp4");
 		cap1.open("test1.mp4");
@@ -552,7 +506,7 @@ void CIPSDlg::OnBnClickedBtnPlay()
 		
 		std::thread t(output);
 		t.detach();
-
+		
 		std::thread t1(output1);
 		t1.detach();
 
@@ -660,4 +614,79 @@ void CIPSDlg::OnBnClickedBtnPlay2()
 	isplay2 = false;
 	isplay1 = false;
 	// TODO: 在此添加控件通知处理程序代码
+}
+
+
+void CIPSDlg::OnBnClickedBtnScan()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	// TODO: Add your control notification handler code here
+	UpdateData(TRUE);
+	CFileDialog fileDlg(TRUE);
+	fileDlg.m_ofn.lpstrTitle = _T("文件打开对话框");
+	fileDlg.m_ofn.lpstrFilter = _T("All Files(*.*)\0*.*\0\0");
+	//fileDlg.m_ofn.lpstrDefExt="*.exe";
+	if (IDOK == fileDlg.DoModal())
+	{
+		//CFile file(fileDlg.GetFileName(),CFile::modeRead);
+		m_edit_weights = fileDlg.GetPathName();//文件名+后缀  
+		UpdateData(FALSE);
+	}
+
+	//编辑框中显示所选内容
+	if (!m_edit_weights.IsEmpty())
+	{
+		CWnd* pWnd = GetDlgItem(IDC_EDIT_Path);
+		pWnd->SetWindowText(m_edit_weights);
+	}
+}
+
+
+void CIPSDlg::OnBnClickedBtnPlay3()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	isplay2 = true;
+	isplay1 = true;
+}
+
+
+void CIPSDlg::OnBnClickedButton6()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData(TRUE);
+	CFileDialog fileDlg(TRUE);
+	fileDlg.m_ofn.lpstrTitle = _T("文件打开对话框");
+	fileDlg.m_ofn.lpstrFilter = _T("All Files(*.*)\0*.*\0\0");
+	//fileDlg.m_ofn.lpstrDefExt="*.exe";
+	if (IDOK == fileDlg.DoModal())
+	{
+		//CFile file(fileDlg.GetFileName(),CFile::modeRead);
+		CString file = fileDlg.GetPathName();//文件名+后缀  
+		UpdateData(FALSE);
+		USES_CONVERSION;
+		cap.open(T2A(file.GetBuffer(0)));
+		isplay1 = true;
+
+	}
+}
+
+
+void CIPSDlg::OnBnClickedButton5()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData(TRUE);
+	CFileDialog fileDlg(TRUE);
+	fileDlg.m_ofn.lpstrTitle = _T("文件打开对话框");
+	fileDlg.m_ofn.lpstrFilter = _T("All Files(*.*)\0*.*\0\0");
+	//fileDlg.m_ofn.lpstrDefExt="*.exe";
+	if (IDOK == fileDlg.DoModal())
+	{
+		//CFile file(fileDlg.GetFileName(),CFile::modeRead);
+		CString file = fileDlg.GetPathName();//文件名+后缀  
+		UpdateData(FALSE);
+		USES_CONVERSION;
+		cap1.open(T2A(file.GetBuffer(0)));
+		isplay2 = true;
+
+	}
 }

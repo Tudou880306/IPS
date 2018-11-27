@@ -47,4 +47,11 @@ public:
 	 
 	 CListCtrl m_listctrl_bbox;
 	 afx_msg void OnBnClickedBtnPlay2();
+	 afx_msg void OnBnClickedBtnScan();
+private:
+	CString m_edit_weights;
+public:
+	afx_msg void OnBnClickedBtnPlay3();
+	afx_msg void OnBnClickedButton6();
+	afx_msg void OnBnClickedButton5();
 };

@@ -22,7 +22,7 @@
 6 *@param[in]
 7 *@return
 8 ****************************************/
-SHIPDETECTOR_API void* SDLib_Init();
+SHIPDETECTOR_API void* SDLib_Init(char* weightname);
 SHIPDETECTOR_API int SDLib_StartProcess(void *fhandl, std::string path, std::vector<bbox_t>&targetinfo);
 SHIPDETECTOR_API int SDLib_StartProcess_Mat(void *fhandl, cv::Mat mat, std::vector<bbox_t>&targetinfo);
 SHIPDETECTOR_API int SDLib_Release(void *fhandl);
