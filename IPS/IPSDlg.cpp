@@ -11,24 +11,21 @@
 #include <mutex>
 #include <atomic>
 #include "ShipDetectorDll.h"
+#include "player.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-CvCapture* Capture;
-CvCapture* m_Video;
-IplImage* frame;
-IplImage* m_grabframe;
-CRect rect;
-CDC *pDC;
-HDC hDC;
-CWnd *pwnd;
-int ImgNum = 0;
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 //CIPSDlg dlg;
-std::mutex mt, mt_temp, mt1, mt1_temp;
-bool isplay1 = false;
-bool isplay2 = false;
+std::mutex  mt_temp,  mt2_temp, mt3_temp, mt4_temp,mt_queue;
+static CString m_edit_weights;
+
+std::vector<Player*>PlayerVideoGroup;
+std::vector<Player*> PlayerImageGroup;
+std::queue<std::vector<bbox_t>> result_queue;
+cv::Mat  m_CvvImages, m_CvvImages2, m_CvvImages3, m_CvvImages4;;
+
 class CAboutDlg : public CDialogEx
 {
 public:
@@ -89,6 +86,11 @@ BEGIN_MESSAGE_MAP(CIPSDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_PLAY3, &CIPSDlg::OnBnClickedBtnPlay3)
 	ON_BN_CLICKED(IDC_BUTTON6, &CIPSDlg::OnBnClickedButton6)
 	ON_BN_CLICKED(IDC_BUTTON5, &CIPSDlg::OnBnClickedButton5)
+	ON_BN_CLICKED(IDC_BUTTON9, &CIPSDlg::OnBnClickedButton9)
+	ON_BN_CLICKED(IDC_BUTTON7, &CIPSDlg::OnBnClickedButton7)
+	ON_BN_CLICKED(IDC_BUTTON8, &CIPSDlg::OnBnClickedButton8)
+	ON_BN_CLICKED(IDC_BUTTON4, &CIPSDlg::OnBnClickedButton4)
+	ON_BN_CLICKED(IDC_BUTTON3, &CIPSDlg::OnBnClickedButton3)
 END_MESSAGE_MAP()
 
 
@@ -196,169 +198,8 @@ void  CIPSDlg::DrawPicToHDC(IplImage *img, UINT ID)
 	cimg.DrawToHDC(hDC, &rect); // 将图片绘制到显示控件的指定区域内
 	ReleaseDC(pDC);
 }
-cv::VideoCapture cap, cap1;
-cv::Mat cur_frame, cur_frame1;
-void *handle, *handle1;
-std::vector<bbox_t>targetinfo, targetinfo1;
-std::queue<std::vector<bbox_t>> result_queue;
-cv::Mat  m_CvvImages, m_CvvImages1;
-std::atomic<bool> flag = true;
-std::atomic<bool> flag1 = true;
-void output()
-{
-	while (1)
-	{
-		std::thread t_detect, t_cap;
-		cv::Mat cap_frame, m_CvvImages_temp;
-		while (!cur_frame.empty())
-		{
-			if (!t_cap.joinable())
-			{
-				t_cap = std::thread([&]()
-				{
-					while (1)
-					{
-						OutputDebugString(_T("===============t_cap\r\n"));
-						if (isplay1)
-						{
-							if (cap.isOpened())
-							{
-								cap >> cap_frame;
-							}
-							else
-								cap_frame = cur_frame.clone();
-							if (flag)
-							{
-								//mt1.lock();
-								//cur_frame1.copyTo(m_CvvImages1_temp); //复制该帧图像 
-								m_CvvImages_temp = cap_frame.clone();
-								flag = false;
-								//mt1.unlock();
-							}
-							Sleep(25);
-						}
-						else
-							Sleep(1000);
-					}
-				});
-			}
-			if (!t_detect.joinable())
-			{
-				t_detect = std::thread([&]()
-				{
-					flag = true;
 
-					while (1)
-					{
-						while (!cur_frame.empty() && isplay1)
-						{
-							//flag = true;
-							OutputDebugString(_T("===============t_detect\r\n"));
 
-							if (!flag)
-							{
-								SDLib_StartProcess_Mat(handle, m_CvvImages_temp, targetinfo);
-
-								result_queue.push(targetinfo);
-								mt_temp.lock();
-								//m_CvvImages1_temp.copyTo(m_CvvImages1);
-								m_CvvImages = m_CvvImages_temp.clone();
-
-								mt_temp.unlock();
-								flag = true;
-
-							}
-							cv::waitKey(3);
-							Sleep(5);
-						}
-						Sleep(500);
-					}
-				});
-			}
-			Sleep(10);
-		}
-	}
-}
-void output1()
-{
-	while (1)
-	{
-		std::thread t_detect, t_cap;
-		cv::Mat cap_frame, m_CvvImages1_temp;
-		while (!cur_frame1.empty())
-		{
-			
-			if (!t_cap.joinable())
-			{
-				t_cap = std::thread([&]()
-				{
-					cap_frame = cur_frame1.clone();
-					while (1)
-					{
-						if (!cap_frame.empty())
-						{
-							OutputDebugString(_T("===============t_cap\r\n"));
-							if (isplay2)
-							{
-								if (cap1.isOpened())
-								{
-									cap1 >> cap_frame;
-									if (flag1)
-									{
-										//mt1.lock();
-										//cur_frame1.copyTo(m_CvvImages1_temp); //复制该帧图像 
-										m_CvvImages1_temp = cap_frame.clone();
-										flag1 = false;
-										//mt1.unlock();
-									}
-								}
-								else
-								{
-									m_CvvImages1_temp = cap_frame.clone();
-									flag1 = false;
-								}
-
-								Sleep(25);
-							}
-							else
-								Sleep(1000);
-						}
-						
-					}
-				});
-			}
-			if (!t_detect.joinable())
-			{
-				t_detect = std::thread([&]()
-				{
-					flag1 = true;
-					while (1)
-					{
-						while (!m_CvvImages1_temp.empty() && isplay2)
-						{
-							OutputDebugString(_T("===============t_detect\r\n"));
-							if (!flag1)
-							{
-								SDLib_StartProcess_Mat(handle1, m_CvvImages1_temp, targetinfo1);
-								result_queue.push(targetinfo1);
-								mt1_temp.lock();
-								//m_CvvImages1_temp.copyTo(m_CvvImages1);
-								m_CvvImages1 = m_CvvImages1_temp.clone();
-								mt1_temp.unlock();
-								flag1 = true;
-								
-							}
-							cv::waitKey(3);
-							Sleep(5);
-						}
-						Sleep(500);
-					}
-				});
-			}
-			Sleep(10);
-		}
-	}
-}
 
 void CIPSDlg::OnBnClickedBtnPlay()
 {
@@ -368,21 +209,10 @@ void CIPSDlg::OnBnClickedBtnPlay()
 		return;
 	}
 
-	USES_CONVERSION;
-	handle = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
-	handle1 = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
-	//cv::VideoCapture cap("test.mp4"); 
-	//cap.open("test.mp4");
-	//cap1.open("test1.mp4");
-	//cap >> cur_frame;
-	//cap1 >> cur_frame1;
-	//int fps = cap.get(CV_CAP_PROP_FPS);
-	//CString temp;
-	//temp.Format(_T("%d"), fps);
-	//OutputDebugString(LPCWSTR(temp));
-
-
-
+	//USES_CONVERSION;
+	//handle = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
+	//handle1 = SDLib_Init(T2A(m_edit_weights.GetBuffer(0)));
+	
 }
 
 void CIPSDlg::OnTimer(UINT_PTR nIDEvent)
@@ -390,23 +220,30 @@ void CIPSDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 
 	OutputDebugString(_T("==============OnTimer\n"));
-	//if (isplay1)
+	//if (p_mat!=NULL)
 	{
+
 		mt_temp.lock();
 		DrawPicToHDC((IplImage*)&IplImage(m_CvvImages), IDC_STATIC_1);
 		mt_temp.unlock();
 	}
 	//if (isplay2)
 	{
-		mt1_temp.lock();
-		DrawPicToHDC((IplImage*)&IplImage(m_CvvImages1), IDC_STATIC_2);
-		mt1_temp.unlock();
+		mt2_temp.lock();
+		DrawPicToHDC((IplImage*)&IplImage(m_CvvImages2), IDC_STATIC_2);
+		mt2_temp.unlock();
 	}
+	mt3_temp.lock();
+	DrawPicToHDC((IplImage*)&IplImage(m_CvvImages3), IDC_STATIC_3);
+	mt3_temp.unlock();
+	mt4_temp.lock();
+	DrawPicToHDC((IplImage*)&IplImage(m_CvvImages4), IDC_STATIC_4);
+	mt4_temp.unlock();
 
 	if (result_queue.size() > 0)
 	{
+		mt_queue.lock();
 		std::vector<bbox_t>temp = result_queue.front();
-
 		for (int i = 0; i < temp.size(); i++)
 		{
 			CString str;
@@ -414,7 +251,7 @@ void CIPSDlg::OnTimer(UINT_PTR nIDEvent)
 			m_listctrl_bbox.InsertItem(m_listctrl_bbox.GetItemCount(), str);
 		}
 		result_queue.pop();
-
+		mt_queue.unlock();
 	}
 
 	CDialogEx::OnTimer(nIDEvent);
@@ -425,21 +262,36 @@ void CIPSDlg::OnTimer(UINT_PTR nIDEvent)
 void CIPSDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	isplay1 = !isplay1;
+//	isplay1 = !isplay1;
+	for (int i =0;i<PlayerVideoGroup.size();i++)
+	{
+		if (((videoPlayer*)PlayerVideoGroup[i])->playernum == 1)
+		{
+			((videoPlayer*)PlayerVideoGroup[i])->isplay = !((videoPlayer*)PlayerVideoGroup[i])->isplay;
+		}
+	}
 }
 
 
 void CIPSDlg::OnBnClickedButton2()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	isplay2 = !isplay2;
+//	isplay2 = !isplay2;
+	for (int i = 0; i < PlayerVideoGroup.size(); i++)
+	{
+		if (((videoPlayer*)PlayerVideoGroup[i])->playernum == 2)
+		{
+			((videoPlayer*)PlayerVideoGroup[i])->isplay = !((videoPlayer*)PlayerVideoGroup[i])->isplay;
+		}
+	}
+
 }
 
 
 void CIPSDlg::OnBnClickedBtnPlay2()
 {
-	isplay2 = false;
-	isplay1 = false;
+//	isplay2 = false;
+//	isplay1 = false;
 	// TODO: 在此添加控件通知处理程序代码
 }
 
@@ -472,11 +324,155 @@ void CIPSDlg::OnBnClickedBtnScan()
 void CIPSDlg::OnBnClickedBtnPlay3()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	isplay2 = true;
-	isplay1 = true;
+//	isplay2 = true;
+//	isplay1 = true;
 }
 
+void outputresult(cv::Mat mat, std::vector<bbox_t> targetinfo)
+{
+	mt_temp.lock();
+	m_CvvImages = mat.clone();
+	mt_temp.unlock();
 
+	mt_queue.lock();
+	result_queue.push(targetinfo);
+	mt_queue.unlock();
+}
+void outputresult2(cv::Mat mat, std::vector<bbox_t> targetinfo)
+{
+	mt2_temp.lock();
+	m_CvvImages2 = mat.clone();
+	mt2_temp.unlock();
+
+	mt_queue.lock();
+	result_queue.push(targetinfo);
+	mt_queue.unlock();
+}
+
+void outputresult3(cv::Mat mat, std::vector<bbox_t> targetinfo)
+{
+	mt3_temp.lock();
+	m_CvvImages3 = mat.clone();
+	mt3_temp.unlock();
+
+	mt_queue.lock();
+	result_queue.push(targetinfo);
+	mt_queue.unlock();
+}
+
+void outputresult4(cv::Mat mat, std::vector<bbox_t> targetinfo)
+{
+	mt4_temp.lock();
+	m_CvvImages4 = mat.clone();
+	mt4_temp.unlock();
+
+	mt_queue.lock();
+	result_queue.push(targetinfo);
+	mt_queue.unlock();
+}
+void initPlayer(CString file, int num)
+{
+	USES_CONVERSION;
+	std::string filename = T2A(file.GetBuffer(0));
+	std::string const protocol = filename.substr(0, 7);
+	std::string const file_ext = filename.substr(filename.find_last_of(".") + 1);
+	if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" || 	// video file
+		protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/")	// video network stream
+	{
+
+		Player*  p = NULL;
+		for (int i = 0; i < PlayerVideoGroup.size(); i++)
+		{
+			if (((videoPlayer*)PlayerVideoGroup[i])->playernum == num)
+			{
+				p = PlayerVideoGroup[i];
+			}
+		}
+		if (p != NULL)
+		{
+			((videoPlayer*)p)->stop();
+			((videoPlayer*)p)->file = file;
+			((videoPlayer*)p)->isplay = true;
+			((videoPlayer*)p)->start();
+		}
+		else
+		{
+			Ifactory *factory = new videoPlayerFactory();
+			Player *player = factory->CreatePlayer();
+			player->playernum = num;
+			player->init(T2A(m_edit_weights.GetBuffer(0)));
+			((videoPlayer*)player)->init();
+			((videoPlayer*)player)->file = file;
+			((videoPlayer*)player)->isplay = true;
+			switch (num)
+			{
+			case 1:
+				((videoPlayer*)player)->outresult = outputresult;
+				break;
+			case 2:
+				((videoPlayer*)player)->outresult = outputresult2;
+				break;
+			case 3:
+				((videoPlayer*)player)->outresult = outputresult3;
+				break;
+			case 4:
+				((videoPlayer*)player)->outresult = outputresult4;
+				break;
+			default:
+				break;
+			}
+			player->start();
+			PlayerVideoGroup.push_back(player);
+		}
+
+	}
+	else//图片
+	{
+		cv::Mat cur_frame = cv::imread(filename);
+
+		Player*  p = NULL;
+		for (int i = 0; i < PlayerImageGroup.size(); i++)
+		{
+			if ((PlayerImageGroup[i])->playernum == num)
+			{
+				p = PlayerImageGroup[i];
+			}
+		}
+		if (p != NULL)
+		{
+			p->cur_frame = cur_frame.clone();
+			p->start();
+			m_CvvImages = p->cur_frame.clone();
+		}
+		else
+		{
+			Ifactory *factory = new imagePlayerFactory();
+			Player *player = factory->CreatePlayer();
+			player->playernum = num;
+			player->init(T2A(m_edit_weights.GetBuffer(0)));
+			player->cur_frame = cur_frame.clone();
+			switch (num)
+			{
+			case 1:
+				(player)->outresult = outputresult;
+				break;
+			case 2:
+				(player)->outresult = outputresult2;
+				break;
+			case 3:
+				(player)->outresult = outputresult3;
+				break;
+			case 4:
+				(player)->outresult = outputresult4;
+				break;
+			default:
+				break;
+			}
+			player->start();
+			PlayerImageGroup.push_back(player);
+		}
+	}
+}
 void CIPSDlg::OnBnClickedButton6()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -490,34 +486,10 @@ void CIPSDlg::OnBnClickedButton6()
 		//CFile file(fileDlg.GetFileName(),CFile::modeRead);
 		CString file = fileDlg.GetPathName();//文件名+后缀  
 		UpdateData(FALSE);
-		USES_CONVERSION;
-		std::string filename = T2A(file.GetBuffer(0));
-		std::string const protocol = filename.substr(0, 7);
-		std::string const file_ext = filename.substr(filename.find_last_of(".") + 1);
-		if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" || 	// video file
-			protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/")	// video network stream
-		{
-			std::thread t(output);
-			t.detach();
-
-			cap.open(T2A(file.GetBuffer(0)));
-			cap >> cur_frame;
-			isplay1 = true;
-		}
-		else
-		{
-			cur_frame = cv::imread(filename);
-			SDLib_StartProcess_Mat(handle, cur_frame, targetinfo);
-			result_queue.push(targetinfo);
-			mt_temp.lock();
-			//m_CvvImages1_temp.copyTo(m_CvvImages1);
-			m_CvvImages = cur_frame.clone();
-			mt_temp.unlock();
-		}
-		
-
+		initPlayer(file, 1);
 	}
 }
+
 
 
 void CIPSDlg::OnBnClickedButton5()
@@ -533,33 +505,83 @@ void CIPSDlg::OnBnClickedButton5()
 		//CFile file(fileDlg.GetFileName(),CFile::modeRead);
 		CString file = fileDlg.GetPathName();//文件名+后缀  
 		UpdateData(FALSE);
-		USES_CONVERSION;
+		initPlayer(file,2);
+	}
+}
 
-		std::string filename = T2A(file.GetBuffer(0));
-		std::string const protocol = filename.substr(0, 7);
-		std::string const file_ext = filename.substr(filename.find_last_of(".") + 1);
-		if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" || 	// video file
-			protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/")	// video network stream
+
+void CIPSDlg::OnBnClickedButton9()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	Player*  p;
+	for (int i = 0; i < PlayerVideoGroup.size(); i++)
+	{
+		if (((videoPlayer*)PlayerVideoGroup[i])->playernum == 1)
 		{
-			
-
-			std::thread t1(output1);
-			t1.detach();
-			cap1.open(T2A(file.GetBuffer(0)));
-			cap1 >> cur_frame1;
-			isplay2 = true;
-
+			((videoPlayer*)PlayerVideoGroup[i])->stop();
 		}
-		else
+	}
+}
+
+
+void CIPSDlg::OnBnClickedButton7()
+{
+	// TODO: 在此添加控件通知处理程序代码
+
+	UpdateData(TRUE);
+	CFileDialog fileDlg(TRUE);
+	fileDlg.m_ofn.lpstrTitle = _T("文件打开对话框");
+	fileDlg.m_ofn.lpstrFilter = _T("All Files(*.*)\0*.*\0\0");
+	//fileDlg.m_ofn.lpstrDefExt="*.exe";
+	if (IDOK == fileDlg.DoModal())
+	{
+		//CFile file(fileDlg.GetFileName(),CFile::modeRead);
+		CString file = fileDlg.GetPathName();//文件名+后缀  
+		UpdateData(FALSE);
+		initPlayer(file, 3);
+	}
+}
+
+
+void CIPSDlg::OnBnClickedButton8()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData(TRUE);
+	CFileDialog fileDlg(TRUE);
+	fileDlg.m_ofn.lpstrTitle = _T("文件打开对话框");
+	fileDlg.m_ofn.lpstrFilter = _T("All Files(*.*)\0*.*\0\0");
+	//fileDlg.m_ofn.lpstrDefExt="*.exe";
+	if (IDOK == fileDlg.DoModal())
+	{
+		//CFile file(fileDlg.GetFileName(),CFile::modeRead);
+		CString file = fileDlg.GetPathName();//文件名+后缀  
+		UpdateData(FALSE);
+		initPlayer(file, 4);
+	}
+}
+
+
+void CIPSDlg::OnBnClickedButton4()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	for (int i = 0; i < PlayerVideoGroup.size(); i++)
+	{
+		if (((videoPlayer*)PlayerVideoGroup[i])->playernum == 3)
 		{
-			cur_frame1 = cv::imread(filename);
-			SDLib_StartProcess_Mat(handle1, cur_frame1, targetinfo1);
-			result_queue.push(targetinfo1);
-			mt1_temp.lock();
-			//m_CvvImages1_temp.copyTo(m_CvvImages1);
-			m_CvvImages1 = cur_frame1.clone();
-			mt1_temp.unlock();
+			((videoPlayer*)PlayerVideoGroup[i])->isplay = !((videoPlayer*)PlayerVideoGroup[i])->isplay;
 		}
+	}
+}
 
+
+void CIPSDlg::OnBnClickedButton3()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	for (int i = 0; i < PlayerVideoGroup.size(); i++)
+	{
+		if (((videoPlayer*)PlayerVideoGroup[i])->playernum == 4)
+		{
+			((videoPlayer*)PlayerVideoGroup[i])->isplay = !((videoPlayer*)PlayerVideoGroup[i])->isplay;
+		}
 	}
 }
