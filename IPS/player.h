@@ -19,6 +19,11 @@ public:
 	cv::Mat out_frame;
 	int temp = 0;
 	int playernum = -1;
+
+	//bool operator == (const Player & obj) const //重载 “==” 操作符，函数最后的 const 别忘了，否则会报错。
+	//{
+	//	return playernum == obj.playernum;
+	//};
 };
 
 class imagePlayer :public Player

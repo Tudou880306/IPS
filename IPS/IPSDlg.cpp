@@ -428,6 +428,15 @@ void initPlayer(CString file, int num)
 	}
 	else//ͼƬ
 	{
+		Player*  ptemp = NULL;
+		for (int i = 0; i < PlayerVideoGroup.size(); i++)
+		{
+			if ((PlayerVideoGroup[i])->playernum == num)
+			{
+				((videoPlayer*)PlayerVideoGroup[i])->stop();
+			}
+		}
+
 		cv::Mat cur_frame = cv::imread(filename);
 
 		Player*  p = NULL;
