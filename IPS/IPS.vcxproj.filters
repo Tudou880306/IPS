@@ -39,6 +39,15 @@
     <ClInclude Include="player.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MainDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageTool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="yolomark.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="IPS.cpp">
@@ -54,6 +63,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="player.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MainDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageTool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="yolomark.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

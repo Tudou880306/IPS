@@ -189,17 +189,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CvvImage.h" />
+    <ClInclude Include="ImageTool.h" />
     <ClInclude Include="IPS.h" />
     <ClInclude Include="IPSDlg.h" />
+    <ClInclude Include="MainDlg.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="yolomark.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CvvImage.cpp" />
+    <ClCompile Include="ImageTool.cpp" />
     <ClCompile Include="IPS.cpp" />
     <ClCompile Include="IPSDlg.cpp" />
+    <ClCompile Include="MainDlg.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -207,6 +212,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="yolomark.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="IPS.rc" />

@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "IPS.h"
 #include "IPSDlg.h"
-
+#include "MainDlg.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -70,7 +70,8 @@ BOOL CIPSApp::InitInstance()
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 
-	CIPSDlg dlg;
+	//CIPSDlg dlg;
+	CMainDlg dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
